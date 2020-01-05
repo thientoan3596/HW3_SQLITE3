@@ -22,6 +22,24 @@ int main(void)
   char *zErrMsg;
   sqlite3_stmt *myStmt;
 
+  // sqlite3_stmt *res;
+  // sqlite3_prepare_v2(connection,"SELECT market_name FROM markets WHERE ? = 1;",-1,&res,0);
+  // sqlite3_bind_text(res,1,"id_market",-1,SQLITE_TRANSIENT);
+  // int rc = sqlite3_step(res) ;
+  // printf("\nrc %d\n",rc);
+  // printf("\n%d\n",sqlite3_column_count(res));
+  // printf("%s",sqlite3_column_text(res,0));
+  // printf("\n%s",sqlite3_errmsg(connection));
+  // sqlite3_step(res);
+  // printf("\n%s",sqlite3_errmsg(connection));
+
+
+
+
+
+
+  return 0;
+
   returnCode = sqlite3_exec(connection, "CREATE TABLE IF NOT EXISTS prices ("
                                         "id_price INTEGER PRIMARY KEY,"
                                         "id_stock INTEGER,"
@@ -46,7 +64,7 @@ int main(void)
       exit(SQLSTMTERROR);
     }
 
-    
+
     int menu_Option = -1;
     while(menu_Option != 0 )
     {

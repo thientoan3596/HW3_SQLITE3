@@ -33,6 +33,7 @@ bool doesExist(sqlite3 *conn,char* tableName, char* columnName,char *value,int d
   /* dataType : 1 - int, 2- char, 3 - float*/
   char SQL_STRING[1024];
   sqlite3_stmt *res;
+  int returnVal;
   if (dataType != 1 && dataType != 2 && dataType != 3)
   {
     printf("$$INVALID DATATYPE$$\n");
@@ -45,7 +46,9 @@ bool doesExist(sqlite3 *conn,char* tableName, char* columnName,char *value,int d
     sqlite3_prepare_v2(conn,SQL_STRING,-1,&res,0);
     if(sqlite3_step(res)== SQLITE_ROW)
     {
-      return sqlite3_column_int(res,0);
+      returnVal = sqlite3_column_int(res,0);
+      sqlite3_finalize(res);
+      return returnVal;
     }
     printf("$$ERROR does exist() Function parameter$$\n");
     exit(INVALID_INPUT);
@@ -57,7 +60,9 @@ bool doesExist(sqlite3 *conn,char* tableName, char* columnName,char *value,int d
     sqlite3_prepare_v2(conn,SQL_STRING,-1,&res,0);
     if(sqlite3_step(res)== SQLITE_ROW)
     {
-      return sqlite3_column_int(res,0);
+      returnVal = sqlite3_column_int(res,0);
+      sqlite3_finalize(res);
+      return returnVal;
     }
     printf("$$ERROR does exist() Function parameter$$\n");
     exit(INVALID_INPUT);
@@ -69,15 +74,14 @@ bool doesExist(sqlite3 *conn,char* tableName, char* columnName,char *value,int d
     int rc =sqlite3_step(res);
     if(rc== SQLITE_ROW)
     {
-      printf("\n>%d<\n",sqlite3_column_int(res,0));
-      return sqlite3_column_int(res,0);
+      returnVal = sqlite3_column_int(res,0);
+      sqlite3_finalize(res);
+      return returnVal;
     }
     printf("$$ERROR: does exist() Function parameter$$\n");
     exit(INVALID_INPUT);
   }
 }
-
-
 
 static int mycallback(void *data, int argc, char **argv, char **azColName){
    int i;
@@ -88,7 +92,6 @@ static int mycallback(void *data, int argc, char **argv, char **azColName){
    printf("\n");
    return 0;
 }
-
 
 char *mygetline(char *str, int strlength)
 {
@@ -203,28 +206,22 @@ int libmysqlite3_addingRecord_clients(sqlite3 *conn)
   printf("\tEnter id_client:\n\t>");
   scanf("%d",&id_client_buff);
 
-  sqlite3_prepare_v2 (conn,"SELECT * FROM clients WHERE id_client = ?;",-1,&res,0);
-  sqlite3_bind_int(res,1,id_client_buff);
-  if(sqlite3_step(res) != SQLITE_DONE )
+  sprintf(static_string_buff,"%d",id_client_buff);
+  if(doesExist(conn,"clients","id_client",static_string_buff,1))
   {
     printf("$$Error! id_client is already existed.$$\n");
-    sqlite3_finalize(res);
     return INVALID_INPUT;
   }
-  sqlite3_finalize(res);
-
 
   sqlite3_prepare_v2(conn,"INSERT INTO clients VALUES(?,?,?);",-1,&res,0);
   sqlite3_bind_int(res,1,id_client_buff);
 
   printf("\tEnter first_name:\n\t>");
   mygetline(static_string_buff, 1024);
-  //fgets(static_string_buff, 1024,stdin);
   sqlite3_bind_text(res,2,static_string_buff,strlen(static_string_buff),SQLITE_TRANSIENT);
 
   printf("\tEnter last_name:\n\t>");
   mygetline(static_string_buff, 1024);
-  //fgets(static_string_buff, 1024,stdin);
   sqlite3_bind_text(res,3,static_string_buff,strlen(static_string_buff),SQLITE_TRANSIENT);
 
   if(sqlite3_step(res) != SQLITE_DONE)
@@ -241,64 +238,38 @@ int libmysqlite3_addingRecord_clients(sqlite3 *conn)
 int libmysqlite3_addingRecord_deals(sqlite3 *conn)
 {
   int id_deal_buff,id_client_buff,id_price_buff,quantity_buff,is_buy_buff;
+  char static_string_buff[STRINGBUFF];
   sqlite3_stmt *res;
 
 
   printf("\tEnter id_deal:\n\t>");
   scanf("%d",&id_deal_buff);
 
-  sqlite3_prepare_v2 (conn,"SELECT *  FROM deals WHERE id_deal IS ?;",-1,&res,0);
-  sqlite3_bind_int(res,1,id_deal_buff);
-  if(sqlite3_step(res) != SQLITE_DONE)
+  sprintf(static_string_buff,"%d",id_deal_buff);
+  if(doesExist(conn,"deals","id_deal",static_string_buff,1))
   {
-    printf("\t$$Error! id_price already exists.$$\n");
-    sqlite3_finalize(res);
+    printf("\t$$Error! id_deal already exists.$$\n");
     return INVALID_INPUT;
   }
-  sqlite3_finalize(res);
 
   printf("\tEnter id_price:\n\t>");
   scanf("%d",&id_price_buff);
-  sqlite3_prepare_v2 (conn,"SELECT *  FROM prices WHERE id_price IS ?;",-1,&res,0);
-  sqlite3_bind_int(res,1,id_price_buff);
-  if(sqlite3_step(res) == SQLITE_DONE)
+  sprintf(static_string_buff,"%d",id_price_buff);
+  if(!doesExist(conn,"prices","id_price",static_string_buff,1))
   {
-    printf("\t$$Error! id_stock does not exist.$$\n");
-    sqlite3_finalize(res);
+    printf("\t$$Error! id_deal does not exists.$$\n");
     return INVALID_INPUT;
   }
-  sqlite3_finalize(res);
+
 
   printf("\tEnter id_client:\n\t>");
   scanf("%d",&id_client_buff);
-  sqlite3_prepare_v2 (conn,"SELECT *  FROM clients WHERE id_client IS ?;",-1,&res,0);
-  sqlite3_bind_int(res,1,id_client_buff);
-  if(sqlite3_step(res) == SQLITE_DONE)
+  sprintf(static_string_buff,"%d",id_client_buff);
+  if(!doesExist(conn,"clients","id_client",static_string_buff,1))
   {
-    printf("\t$$Error! id_client does not exist.$$\n");
-    sqlite3_finalize(res);
+    printf("\t$$Error! id_client does not exists.$$\n");
     return INVALID_INPUT;
   }
-  sqlite3_finalize(res);
-
-
-  // sqlite3_prepare_v2 (conn,"SELECT"
-  //                               "NOT EXITS(SELECT * FROM deals WHERE id_deal IS ?)"
-  //                           "AND"
-  //                               "EXISTS(SELECT * FROM prices WHERE id_price IS ?"
-  //                           "AND"
-  //                               "EXISTS(SELECT * FROM clients WHERE id_client IS ?;",-1,&res,0);
-  //
-  // sqlite3_bind_int(res,2,id_price_buff);
-  // sqlite3_bind_int(res,3,id_client_buff);
-  // sqlite3_step(res);
-  // if(!(sqlite3_column_int(res,0)))
-  // {
-  //   printf("\t$$Error! id_price already exists or id_stock/id_client does not exist.$$\n");
-  //   sqlite3_finalize(res);
-  //   return INVALID_INPUT;
-  // }
-  // sqlite3_finalize(res);
 
   printf("\tEnter quantity:\n\t>");
   scanf("%d",&quantity_buff);
@@ -322,8 +293,6 @@ int libmysqlite3_addingRecord_deals(sqlite3 *conn)
   sqlite3_bind_int(res,3,id_price_buff);
   sqlite3_bind_int(res,4,quantity_buff);
   sqlite3_bind_int(res,5,is_buy_buff);
-  // int rc = sqlite3_step(res);
-  // printf("<%d>,",rc);
   if(sqlite3_step(res)!= SQLITE_DONE)
   {
     puts("\t$$SQL Statement fail!$$\n");
@@ -336,8 +305,6 @@ int libmysqlite3_addingRecord_deals(sqlite3 *conn)
   return SUCCEED;
 }
 
-
-
 int libmysqlite3_addingRecord_prices(sqlite3 *conn)
 {
   int id_price_buff,id_stock_buff,option;
@@ -345,49 +312,23 @@ int libmysqlite3_addingRecord_prices(sqlite3 *conn)
   char static_string_buff[STRINGBUFF];
   sqlite3_stmt *res;
 
-
   printf("\tEnter id_price:\n\t>");
   scanf("%d",&id_price_buff);
-  sqlite3_prepare_v2 (conn, "SELECT * FROM prices WHERE id_price IS ?",-1,&res,0);
-  sqlite3_bind_int(res,1,id_price_buff);
-  if(sqlite3_step(res) != SQLITE_DONE)
+  sprintf(static_string_buff,"%d",id_price_buff);
+  if(doesExist(conn,"prices","id_price",static_string_buff,1))
   {
     printf("\t$$Error! id_price already exists.$$\n");
-    sqlite3_finalize(res);
     return INVALID_INPUT;
-  }sqlite3_finalize(res);
+  }
 
   printf("\tEnter id_stock:\n\t>");
   scanf("%d",&id_stock_buff);
-  sqlite3_prepare_v2 (conn, "SELECT * FROM stocks WHERE id_stock IS ?",-1,&res,0);
-  sqlite3_bind_int(res,1,id_stock_buff);
-  if(sqlite3_step(res) == SQLITE_DONE)
+  sprintf(static_string_buff,"%d",id_stock_buff);
+  if(! doesExist(conn,"stocks","id_stock",static_string_buff,1))
   {
     printf("\t$$Error! id_stock does not exists.$$\n");
-    sqlite3_finalize(res);
     return INVALID_INPUT;
-  }sqlite3_finalize(res);
-
-
-
-
-  // printf("\tEnter id_stock:\n\t>");
-  // scanf("%d",&id_stock_buff);
-  // sqlite3_prepare_v2 (conn, "SELECT"
-  //                               "NOT EXITS(SELECT * FROM prices WHERE id_price IS ?)"
-  //                           "AND"
-  //                               "EXISTS(SELECT * FROM stocks WHERE id_stock IS ?;",-1,&res,0);
-  // sqlite3_bind_int(res,1,id_price_buff);
-  // sqlite3_bind_int(res,2,id_stock_buff);
-  // sqlite3_step(res);
-  // if(!(sqlite3_column_int(res,0)))
-  // {
-  //   printf("\t$$Error! id_price already exists or id_stock does not exist.$$\n");
-  //   sqlite3_finalize(res);
-  //   return INVALID_INPUT;
-  // }
-  // sqlite3_finalize(res);
-
+  }
   printf("\tEnter buy_price:\n\t>");
   scanf("%f",&buy_price_buff);
   printf("\tEnter sell_price:\n\t>");
@@ -435,51 +376,30 @@ int libmysqlite3_addingRecord_stocks(sqlite3 *conn)
   printf("\tEnter id_market:\n\t>");
   scanf("%d",&id_market_buff);
 
-  sqlite3_prepare_v2 (conn, "SELECT * FROM stocks WHERE id_stock IS ?;",-1,&res,0);
-  sqlite3_bind_int(res,1,id_stock_buff);
-  if(sqlite3_step(res)!=SQLITE_DONE)
+  sprintf(static_string_buff,"%d",id_stock_buff);
+  if( doesExist(conn,"stocks","id_stock",static_string_buff,1))
   {
     printf("\t$$Error! id_stock already exists$$\n");
-    sqlite3_finalize(res);
     return INVALID_INPUT;
   }
-  sqlite3_finalize(res);
-
-
-  sqlite3_prepare_v2 (conn, "SELECT 1 FROM markets WHERE id_market IS ?;",-1,&res,0);
-  sqlite3_bind_int(res,1,id_market_buff);
-  if(sqlite3_step(res) == SQLITE_DONE)
+  sprintf(static_string_buff,"%d",id_market_buff);
+  if(! doesExist(conn,"markets","id_market",static_string_buff,1))
   {
     printf("\t$$Error! id_market does not exists$$\n");
-    sqlite3_finalize(res);
     return INVALID_INPUT;
   }
 
-
-
-  // int test = sqlite3_step(res);printf(">%d<>%d<",sqlite3_column_count(res),test);
-  // if(!(sqlite3_column_int(res,0)))
-  // {
-  //   printf("\t$$Error! id_stock already exists or id_market does not exist.$$\n");
-  //   sqlite3_finalize(res);
-  //   return INVALID_INPUT;
-  //}
-  //sqlite3_reset(res);
-  sqlite3_finalize(res);
-  /* Does not group all binding functions in order to use only one string buffer */
+  /* Does not group all binding functions in order to use only one string buffer ( SQLITE_TRANSIENT) */
   sqlite3_prepare_v2(conn,"INSERT INTO stocks VALUES(?,?,?,?);",-1,&res,0);
   sqlite3_bind_int(res,1,id_stock_buff);
   sqlite3_bind_int(res,2,id_market_buff);
 
   printf("\tEnter stock_name:\n\t>");
-
   mygetline(static_string_buff, 1024);
-  //fgets(static_string_buff, 1024,stdin);
   sqlite3_bind_text(res,3,static_string_buff,strlen(static_string_buff),SQLITE_TRANSIENT);
 
   printf("\tEnter s_short_name:\n\t>");
   mygetline(static_string_buff, 1024);
-  //fgets(static_string_buff, 1024,stdin);
   sqlite3_bind_text(res,4,static_string_buff,strlen(static_string_buff),SQLITE_TRANSIENT);
 
   if(sqlite3_step(res) != SQLITE_DONE)
@@ -501,28 +421,18 @@ int libmysqlite3_addingRecord_markets(sqlite3 *conn)
 
   printf("\tEnter id_market:\n\t>");
   scanf("%d",&id_market_buff);
-  sqlite3_prepare_v2 (conn,"SELECT * FROM markets WHERE id_market = ?;",-1,&res,0);
-  sqlite3_bind_int(res,1,id_market_buff);
-  if(sqlite3_step(res) != SQLITE_DONE )
+  sprintf(static_string_buff,"%d",id_market_buff);
+  if( doesExist(conn,"markets","id_market",static_string_buff,1))
   {
     printf("\t$$Error! id_market is already existed.$$\n");
-    sqlite3_finalize(res);
     return INVALID_INPUT;
   }
-  sqlite3_finalize(res);
-
   sqlite3_prepare_v2(conn,"INSERT INTO markets VALUES(?,?,?);",-1,&res,0);
   sqlite3_bind_int(res,1,id_market_buff);
-
   printf("\tEnter market_name:\n\t>");
-
   mygetline(static_string_buff, 1024);
-  //fgets(static_string_buff, 1024,stdin);
   sqlite3_bind_text(res,2,static_string_buff,strlen(static_string_buff),SQLITE_TRANSIENT);
-
   printf("\tEnter m_short_name:\n\t>");
-
-  //fgets(static_string_buff, 1024,stdin);
   mygetline(static_string_buff, 1024);
   sqlite3_bind_text(res,3,static_string_buff,strlen(static_string_buff),SQLITE_TRANSIENT);
 
@@ -674,61 +584,77 @@ void libmysqlite3_updateRecord(sqlite3 *conn)
     case 1:
       printf("\tEnter id_client to update:\n\t>");
       scanf("%d",&buff);
-      libmysqlite3_updateRecord_clients(conn,buff);
+      libmysqlite3_updateRecord_clients(conn,buff,false,0);
       break;
     case 2:
       printf("\tEnter id_deal to update:\n\t>");
       scanf("%d",&buff);
-      libmysqlite3_updateRecord_deals(conn,buff);
+      //libmysqlite3_updateRecord_deals(conn,buff);
       break;
     case 3:
       printf("\tEnter id_price to update:\n\t>");
       scanf("%d",&buff);
-      libmysqlite3_updateRecord_prices(conn,buff);
+      //libmysqlite3_updateRecord_prices(conn,buff);
       break;
     case 4:
       printf("\tEnter id_stock to update:\n\t>");
       scanf("%d",&buff);
-      libmysqlite3_updateRecord_stocks(conn,buff);
+      //libmysqlite3_updateRecord_stocks(conn,buff);
       break;
     case 5:
       printf("\tEnter id_market to update:\n\t>");
       scanf("%d",&buff);
-      libmysqlite3_updateRecord_markets(conn,buff);
+      libmysqlite3_updateRecord_markets(conn,buff,false,0);
       break;
     default:
       puts("$$Invalid Option$$");
       break;
   }
 }
-void libmysqlite3_updateRecord_clients(sqlite3 *conn,int id_client)
+void libmysqlite3_updateRecord_clients(sqlite3 *conn,int id_client,bool restricted, int restrictedTo)
 {
-  int buff;
-  int new_id_client;
-  char strbuff[1024];
+  int option;
+  int new_val;
+  char strbuff[STRINGBUFF];
   sqlite3_stmt *res;
-  printf("\t\t(1-id_client) (2-first_name) (3-last_name)\n\t\t>");
-  scanf("%d",&buff);
-  switch (buff) {
+  if(!restricted)
+  {
+    printf("\t\t(1-id_client) (2-first_name) (3-last_name)\n\t\t>");
+    scanf("%d",&option);
+  }
+  else
+  {
+    option = restrictedTo;
+  }
+
+  switch (option) {
     case 1:
       printf("\t\tNew id_client:\n\t\t>");
-      scanf("%d",&new_id_client);
-      sqlite3_prepare_v2(conn,"UPDATE clients SET id_client = ? WHERE id_client = ?;",-1,&res,0);
-      sqlite3_bind_int(res,1,new_id_client);
-      sqlite3_bind_int(res,2,id_client);
-      if(sqlite3_step(res) != SQLITE_DONE)
+      scanf("%d",&new_val);
+      sprintf(strbuff,"%d",new_val);
+      if(doesExist(conn,"clients","id_client",strbuff,1))
       {
-        printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+        printf("\t\t$$New id_client = %d already exists$$\n",new_val);
       }
       else
       {
+        sqlite3_prepare_v2(conn,"UPDATE clients SET id_client = ? WHERE id_client = ?;",-1,&res,0);
+        sqlite3_bind_int(res,1,new_val);
+        sqlite3_bind_int(res,2,id_client);
+        if(sqlite3_step(res) != SQLITE_DONE)
+        {
+          printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+        }
+        else
+        {
           sqlite3_finalize(res);
           sqlite3_prepare_v2(conn,"UPDATE deals SET id_client = ? WHERE id_client = ?;",-1,&res,0);
-          sqlite3_bind_int(res,1,new_id_client);
+          sqlite3_bind_int(res,1,new_val);
           sqlite3_bind_int(res,2,id_client);
           sqlite3_step(res) ;
+        }
+        sqlite3_finalize(res);
       }
-      sqlite3_finalize(res);
       break;
     case 2:
       printf("\t\tNew first_name:\n\t\t>");
@@ -753,115 +679,338 @@ void libmysqlite3_updateRecord_clients(sqlite3 *conn,int id_client)
       break;
   }
 }
-void libmysqlite3_updateRecord_deals(sqlite3 *conn,int id_deal)
+void libmysqlite3_updateRecord_deals(sqlite3 *conn,int id_deal,bool restricted,int restrictedTo)
 {
-
+  int option;
+  int new_val;
+  char strbuff[STRINGBUFF];
+  sqlite3_stmt *res;
+  printf("\t\t(1-id_deal) (2-id_client) (3-id_price) (4-quantity) (5-is_buy)\n\t\t>");
+  scanf("%d",&option);
+  switch (option) {
+    case 1:
+      printf("\t\tNew id_deal:\n\t\t>");
+      scanf("%d",&new_val);
+      sprintf(strbuff,"%d",new_val);
+      if( doesExist(conn,"deals","id_deal",strbuff,1))
+      {
+        printf("\t\t$$New id_deal = %d already exist$$\n",new_val);
+      }
+      else
+      {
+        sqlite3_prepare_v2(conn,"UPDATE deals SET id_deal = ? WHERE id_deal = ?;",-1,&res,0);
+        sqlite3_bind_int(res,1,new_val);
+        sqlite3_bind_int(res,2,id_deal);
+        if(sqlite3_step(res) != SQLITE_DONE)
+        {
+          printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+        }
+        sqlite3_finalize(res);
+      }
+      break;
+    case 2:
+      sqlite3_prepare_v2(conn,"SELECT id_client FROM deals WHERE id_deal = ?;",-1,&res,0);
+      sqlite3_bind_int(res,1,id_deal);
+      if (sqlite3_step(res) != SQLITE_ROW)
+      {
+        printf("\t\t$$%s$$",sqlite3_errmsg(conn));
+      }
+      else
+      {
+        libmysqlite3_updateRecord_clients(conn,sqlite3_column_int(res,0),true,1);
+      }
+      sqlite3_finalize(res);
+      break;
+    case 3:
+      sqlite3_prepare_v2(conn,"SELECT id_price FROM deals WHERE id_deal = ?;",-1,&res,0);
+      sqlite3_bind_int(res,1,id_deal);
+      if(sqlite3_step(res) != SQLITE_ROW)
+      {
+        printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+      }
+      else
+      {
+        libmysqlite3_updateRecord_prices(conn,sqlite3_column_int(res,0),true,1);
+      }
+      sqlite3_finalize(res);
+      break;
+    case 4:
+      printf("\t\tNew quantity:\n\t\t>");
+      scanf("%d",&new_val);
+      if(new_val < 1)
+      {
+        printf("\t\t$$UPDATE FAIL: NEGATIVE VALUE\n$$");
+      }
+      else
+      {
+        sqlite3_prepare_v2(conn,"UPDATE deals SET quantity = ? WHERE id_deal = ?;",-1,&res,0);
+        sqlite3_bind_int(res,1,new_val);
+        sqlite3_bind_int(res,2,id_deal);
+        if(sqlite3_step(res) != SQLITE_DONE)
+        {
+          printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+        }
+        sqlite3_finalize(res);
+      }
+      break;
+    case 5:
+      printf("\t\tNew is_buy (0-Sell) (1-Buy):\n\t\t>");
+      scanf("%d",&new_val);
+      if(new_val != 0  && new_val != 1)
+      {
+        printf("\t\t$$UPDATE FAIL: INVALID VALUE\n$$");
+      }
+      else
+      {
+        sqlite3_prepare_v2(conn,"UPDATE deals SET is_buy = ? WHERE id_deal = ?;",-1,&res,0);
+        sqlite3_bind_int(res,1,new_val);
+        sqlite3_bind_int(res,2,id_deal);
+        if(sqlite3_step(res) != SQLITE_DONE)
+        {
+          printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+        }
+        sqlite3_finalize(res);
+      }
+      break;
+    default :
+      puts("\t\t$$Invalid Option$$");
+      break;
+  }
 }
-void libmysqlite3_updateRecord_prices(sqlite3 *conn,int id_price)
+void libmysqlite3_updateRecord_prices(sqlite3 *conn,int id_price,bool restricted,int restrictedTo)
 {
-
+  int option, new_val;
+  char strbuff[STRINGBUFF];
+  sqlite3_stmt *res;
+  if(!restricted)
+  {
+    printf("\t\t(1-id_price) (2-id_stock) (3-buy_price) (4-sell_price) (5-date)\n\t\t>");
+    scanf("%d",&option);
+  }
+  else
+  {
+    option = restrictedTo;
+  }
+  switch (option) {
+    case 1:
+      printf("\t\tNew id_price:\n\t\t>");
+      scanf("%d",&new_val);
+      sprintf(strbuff,"%d",new_val);
+      if( doesExist(conn,"prices","id_price",strbuff,1))
+      {
+        printf("\t\t$$New id_price = %d already exists$$\n",new_val);
+      }
+      else
+      {
+        sqlite3_prepare_v2(conn,"UPDATE prices SET id_price = ? WHERE id_price = ?;",-1,&res,0);
+        sqlite3_bind_int(res,1,new_val);
+        sqlite3_bind_int(res,2,id_price);
+        if(sqlite3_step(res) != SQLITE_DONE)
+        {
+          printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+        }
+        else
+        {
+          sqlite3_finalize(res);
+          sqlite3_prepare_v2(conn,"UPDATE deals SET id_price = ? WHERE id_price = ?;",-1,&res,0);
+          sqlite3_bind_int(res,1,new_val);
+          sqlite3_bind_int(res,2,id_price);
+          sqlite3_step(res) ;
+        }
+        sqlite3_finalize(res);
+      }
+      break;
+    case 2:
+      sqlite3_prepare_v2(conn,"SELECT id_stock FROM prices WHERE id_price = ?;",-1,&res,0);
+      sqlite3_bind_int(res,1,id_price);
+      if(sqlite3_step(res) != SQLITE_ROW)
+      {
+        printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+      }
+      else
+      {
+        libmysqlite3_updateRecord_stocks(conn,sqlite3_column_int(res,0),true,1);
+      }
+      sqlite3_finalize(res);
+      break;
+    case 3:
+      printf("\t\tNew buy_price:\n\t\t>");
+      scanf("%d",&new_val);
+      sqlite3_prepare_v2(conn,"UPDATE prices SET buy_price = ? WHERE id_price = ?;",-1,&res,0);
+      sqlite3_bind_int(res,1,new_val);
+      sqlite3_bind_int(res,2,id_price);
+      sqlite3_step(res);
+      sqlite3_finalize(res);
+      break;
+    case 4:
+      printf("\t\tNew sell_price:\n\t\t>");
+      scanf("%d",&new_val);
+      sqlite3_prepare_v2(conn,"UPDATE prices SET sell_price = ? WHERE id_price = ?;",-1,&res,0);
+      sqlite3_bind_int(res,1,new_val);
+      sqlite3_bind_int(res,2,id_price);
+      sqlite3_step(res);
+      sqlite3_finalize(res);
+      break;
+    case 5:
+      printf("\t\tNew date:\n");
+      char *dynamic_str = NULL;
+      if(getDate(&dynamic_str) == SUCCEED)
+      {
+        sqlite3_prepare_v2(conn,"UPDATE prices SET date = ? WHERE id_price = ?;",-1,&res,0);
+        sqlite3_bind_text(res,1,dynamic_str,-1,SQLITE_STATIC);
+        sqlite3_bind_int(res,2,id_price);
+        sqlite3_step(res);
+        sqlite3_finalize(res);
+        free(dynamic_str);
+      }
+      break;
+    default:
+      puts("\t\t$$Invalid Option$$");
+      break;
+  }
 }
-void libmysqlite3_updateRecord_stocks(sqlite3 *conn,int id_stock)
+void libmysqlite3_updateRecord_stocks(sqlite3 *conn,int id_stock,bool restricted,int restrictedTo)
 {
-//   int buff;
-//   int new_id_stock;
-//   char strbuff[1024];
-//   sqlite3_stmt *res;
-//   printf("\t\t(1-id_stock) (2-id_market) (3-stock_name) (4-s_short_name)\n\t\t>");
-//   scanf("%d",&buff);
-//   switch (buff) {
-//     case 1:
-//       printf("\t\tNew id_stock:\n\t\t>");
-//       scanf("%d",&new_id_stock);
-//       sqlite3_prepare_v2(conn,"UPDATE stocks SET id_stock = ? WHERE id_stock = ?;",-1,&res,0);
-//       sqlite3_bind_int(res,1,new_id_stock);
-//       sqlite3_bind_int(res,2,id_stock);
-//       if(sqlite3_step(res) != SQLITE_DONE)
-//       {
-//         printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
-//       }
-//       else
-//       {
-//           sqlite3_finalize(res);
-//           sqlite3_prepare_v2(conn,"UPDATE prices SET id_stock = ? WHERE id_stock = ?;",-1,&res,0);
-//           sqlite3_bind_int(res,1,new_id_stock);
-//           sqlite3_bind_int(res,2,id_stock);
-//           sqlite3_step(res) ;
-//       }
-//       sqlite3_finalize(res);
-//       break;
-//     case 2:
-//       printf("\t\tNew id_market:\n\t\t>");
-//       scanf("%d",&buff);
-//       sqlite3_prepare_v2(conn,"UPDATE markets SET market_name = ? WHERE id_market = ?;",-1,&res,0);
-//       sqlite3_bind_text(res,1,strbuff,strlen(strbuff),SQLITE_STATIC);
-//       sqlite3_bind_int(res,2,id_stock);
-//       sqlite3_step(res) ;
-//       sqlite3_finalize(res);
-//       break;
-//     case 3:
-//       printf("\t\tNew m_short_name:\n\t\t>");
-//       mygetline(strbuff,1024);
-//       sqlite3_prepare_v2(conn,"UPDATE markets SET m_short_name = ? WHERE id_market = ?;",-1,&res,0);
-//       sqlite3_bind_text(res,1,strbuff,strlen(strbuff),SQLITE_STATIC);
-//       sqlite3_bind_int(res,2,id_market);
-//       sqlite3_step(res) ;
-//       sqlite3_finalize(res);
-//       break;
-//     default :
-//       puts("\t\t$$Invalid Option$$");
-//       break;
-//   }
+  int option, new_val;
+  char strbuff[STRINGBUFF];
+  sqlite3_stmt *res;
+  if(!restricted)
+  {
+    printf("\t\t(1-id_stock) (2-id_market) (3-stock_name) (4-s_short_name)\n\t\t>");
+    scanf("%d",&option);
+  }
+  else
+  {
+    option = restrictedTo;
+  }
+  switch (option) {
+    case 1:
+      printf("\t\tNew id_stock:\n\t\t>");
+      scanf("%d",&new_val);
+      sprintf(strbuff,"%d",new_val);
+      if(doesExist(conn,"stocks","id_stock",strbuff,1))
+      {
+        printf("\t\t$$New id_stock = %d already exists$$\n",new_val);
+      }
+      else
+      {
+        sqlite3_prepare_v2(conn,"UPDATE stocks SET id_stock = ? WHERE id_stock = ?;",-1,&res,0);
+        sqlite3_bind_int(res,1,new_val);
+        sqlite3_bind_int(res,2,id_stock);
+        if(sqlite3_step(res) != SQLITE_DONE)
+        {
+          printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+        }
+        else
+        {
+          sqlite3_finalize(res);
+          sqlite3_prepare_v2(conn,"UPDATE prices SET id_stock = ? WHERE id_stock = ?;",-1,&res,0);
+          sqlite3_bind_int(res,1,new_val);
+          sqlite3_bind_int(res,2,id_stock);
+          sqlite3_step(res) ;
+        }
+        sqlite3_finalize(res);
+      }
+      break;
+    case 2:
+      sqlite3_prepare_v2(conn,"SELECT id_market FROM stocks WHERE id_stock = ?;",-1,&res,0);
+      sqlite3_bind_int(res,1,id_stock);
+      if(sqlite3_step(res) != SQLITE_ROW)
+      {
+        printf("\t\t$$%s$$",sqlite3_errmsg(conn));
+      }
+      else
+      {
+        libmysqlite3_updateRecord_markets(conn,sqlite3_column_int(res,1),true,1);
+      }
+      sqlite3_finalize(res);
+      break;
+    case 3:
+      printf("\t\tNew stock_name:\n\t\t>");
+      mygetline(strbuff,STRINGBUFF);
+      sqlite3_prepare_v2(conn,"UPDATE stocks SET stock_name = ? WHERE stock_id = ?;",-1,&res,0);
+      sqlite3_bind_text(res,1,strbuff,-1,SQLITE_STATIC);
+      sqlite3_bind_int(res,2,id_stock);
+      sqlite3_step(res);
+      sqlite3_finalize(res);
+      break;
+    case 4:
+      printf("\t\tNew s_short_name:\n\t\t>");
+      mygetline(strbuff,STRINGBUFF);
+      sqlite3_prepare_v2(conn,"UPDATE stocks SET s_short_name = ? WHERE stock_id = ?;",-1,&res,0);
+      sqlite3_bind_text(res,1,strbuff,-1,SQLITE_STATIC);
+      sqlite3_bind_int(res,2,id_stock);
+      sqlite3_step(res);
+      sqlite3_finalize(res);
+      break;
+    default:
+      puts("\t\t$$Invalid Option$$");
+      break;
+  }
 }
-void libmysqlite3_updateRecord_markets(sqlite3 *conn, int id_market)
+void libmysqlite3_updateRecord_markets(sqlite3 *conn, int id_market,bool restricted,int restrictedTo)
 {
-//   int buff;
-//   int new_id_market;
-//   char strbuff[1024];
-//   sqlite3_stmt *res;
-//   printf("\t\t(1-id_market) (2-market_name) (3-m_short_name)\n\t\t>");
-//   scanf("%d",&buff);
-//   switch (buff) {
-//     case 1:
-//       printf("\t\tNew id_client:\n\t\t>");
-//       scanf("%d",&new_id_client);
-//       sqlite3_prepare_v2(conn,"UPDATE markets SET id_market = ? WHERE id_market = ?;",-1,&res,0);
-//       sqlite3_bind_int(res,1,new_id_market);
-//       sqlite3_bind_int(res,2,id_market);
-//       if(sqlite3_step(res) != SQLITE_DONE)
-//       {
-//         printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
-//       }
-//       else
-//       {
-//           sqlite3_finalize(res);
-//           sqlite3_prepare_v2(conn,"UPDATE stocks SET id_market = ? WHERE id_market = ?;",-1,&res,0);
-//           sqlite3_bind_int(res,1,new_id_market);
-//           sqlite3_bind_int(res,2,id_market);
-//           sqlite3_step(res) ;
-//       }
-//       sqlite3_finalize(res);
-//       break;
-//     case 2:
-//       printf("\t\tNew market_name:\n\t\t>");
-//       mygetline(strbuff,1024);
-//       sqlite3_prepare_v2(conn,"UPDATE markets SET market_name = ? WHERE id_market = ?;",-1,&res,0);
-//       sqlite3_bind_text(res,1,strbuff,strlen(strbuff),SQLITE_STATIC);
-//       sqlite3_bind_int(res,2,id_market);
-//       sqlite3_step(res) ;
-//       sqlite3_finalize(res);
-//       break;
-//     case 3:
-//       printf("\t\tNew m_short_name:\n\t\t>");
-//       mygetline(strbuff,1024);
-//       sqlite3_prepare_v2(conn,"UPDATE markets SET m_short_name = ? WHERE id_market = ?;",-1,&res,0);
-//       sqlite3_bind_text(res,1,strbuff,strlen(strbuff),SQLITE_STATIC);
-//       sqlite3_bind_int(res,2,id_market);
-//       sqlite3_step(res) ;
-//       sqlite3_finalize(res);
-//       break;
-//     default :
-//       puts("\t\t$$Invalid Option$$");
-//       break;
-//   }
+  int option, new_val;
+  char strbuff[STRINGBUFF];
+  sqlite3_stmt *res;
+  if(!restricted)
+  {
+    printf("\t\t(1-id_market) (2-market_name) (3-m_short_name)\n\t\t>");
+    scanf("%d",&option);
+  }
+  else
+  {
+    option = restrictedTo;
+  }
+  switch (option) {
+    case 1:
+      printf("\t\tNew id_market:\n\t\t>");
+      scanf("%d",&new_val);
+      sprintf(strbuff,"%d",new_val);
+      if(doesExist(conn,"markets","id_market",strbuff,1))
+      {
+        printf("\t\t$$New id_market = %d already exists$$\n",new_val);
+      }
+      else
+      {
+        sqlite3_prepare_v2(conn,"UPDATE markets SET id_market = ? WHERE id_market = ?;",-1,&res,0);
+        sqlite3_bind_int(res,1,new_val);
+        sqlite3_bind_int(res,2,id_market);
+        if(sqlite3_step(res) != SQLITE_DONE)
+        {
+          printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+        }
+        else
+        {
+          sqlite3_finalize(res);
+          sqlite3_prepare_v2(conn,"UPDATE stock SET id_market = ? WHERE id_market = ?;",-1,&res,0);
+          sqlite3_bind_int(res,1,new_val);
+          sqlite3_bind_int(res,2,id_market);
+          sqlite3_step(res) ;
+        }
+        sqlite3_finalize(res);
+      }
+      break;
+    case 2:
+      printf("\t\tNew market_name:\n\t\t>");
+      mygetline(strbuff,1024);
+      sqlite3_prepare_v2(conn,"UPDATE markets SET market_name = ? WHERE id_market = ?;",-1,&res,0);
+      sqlite3_bind_text(res,1,strbuff,-1,SQLITE_STATIC);
+      sqlite3_bind_int(res,2,id_market);
+      sqlite3_step(res);
+      sqlite3_finalize(res);
+      break;
+    case 3:
+      printf("\t\tNew m_short_name:\n\t\t>");
+      mygetline(strbuff,1024);
+      sqlite3_prepare_v2(conn,"UPDATE markets SET m_short_name = ? WHERE id_market = ?;",-1,&res,0);
+      sqlite3_bind_text(res,1,strbuff,-1,SQLITE_STATIC);
+      sqlite3_bind_int(res,2,id_market);
+      sqlite3_step(res);
+      sqlite3_finalize(res);
+      break;
+    default:
+      puts("\t\t$$Invalid Option$$");
+      break;
+  }
 }
