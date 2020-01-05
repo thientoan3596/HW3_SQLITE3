@@ -1029,18 +1029,8 @@ void libmysqlite3_updateRecord_markets(sqlite3 *conn, int id_market,bool restric
 }
 int libmysqlite3_print_clientAction(sqlite3 *conn,int id_client)
 {
-  /*
-  **  id_client: fName lName;
-  **
-  **
-  **
-  **
-  **
-  **
-  */
+
   char buff[STRINGBUFF];
-
-
   sqlite3_stmt *res;
   sqlite3_prepare_v2(conn,"SELECT * FROM clients where id_client =?;",-1,&res,0);
   sqlite3_bind_int(res,1,id_client);
@@ -1089,6 +1079,61 @@ int libmysqlite3_print_clientAction(sqlite3 *conn,int id_client)
   while(sqlite3_step(res) == SQLITE_ROW)
   {
     printf("%s|%7d|%8d|%12s|%8d|%6s|%7.3f|%d\n",sqlite3_column_text(res,0),sqlite3_column_int(res,1),sqlite3_column_int(res,2),sqlite3_column_text(res,3),sqlite3_column_int(res,4),sqlite3_column_text(res,5),sqlite3_column_double(res,6),sqlite3_column_int(res,7));
+  }
+  return SUCCEED;
+}
+int libmysqlite3_print_stock_buySell_Info(sqlite3 *conn,int id_stock)
+{
+  char buff[STRINGBUFF];
+
+
+  sqlite3_stmt *res;
+  sqlite3_prepare_v2(conn,"SELECT * FROM stocks where id_stock =?;",-1,&res,0);
+  sqlite3_bind_int(res,1,id_stock);
+  if(sqlite3_step(res) != SQLITE_ROW)
+  {
+    printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+    return INVALID_INPUT;
+  }
+  printf("ID STOCK|MarketID|Name\t\t|Short Name \n");
+  printf("%4d\t|%8d|%-14s|%s\n",sqlite3_column_int(res,0),sqlite3_column_int(res,1),sqlite3_column_text(res,2),sqlite3_column_text(res,3));
+  sqlite3_finalize(res);
+  printf("==============================================\n");
+  sprintf(buff,"%d",id_stock);
+  if(!doesExist(conn,"prices","id_stock",buff,1))
+  {
+    printf("Stock has not been given any price yet!\n");
+    return SUCCEED;
+  }
+  sprintf(buff, "WITH TB1 AS ( "
+                          "SELECT * FROM deals LEFT JOIN clients USING (id_client))"
+                   ", TB2 AS ( "
+                          "SELECT * FROM prices LEFT JOIN stocks USING (id_stock )) "
+                "SELECT 	TB2.date, "
+                         "TB1.quantity, "
+		                     "CASE TB1.is_buy "
+			                       "WHEN 1 THEN 'is bought' "
+			                       "ELSE 'is sold' "
+		                     "END AS status, "
+		                     "CASE TB1.is_buy "
+			                      "WHEN 1 THEN TB2.buy_price "
+			                      "ELSE TB2.sell_price "
+		                     "END AS price,"
+		                     "TB1.first_name, TB1.last_name "
+                "FROM TB1 "
+                "LEFT JOIN TB2 USING(id_price) "
+                "WHERE TB2.id_stock = %d "
+                "ORDER BY TB2.date,TB1.is_buy,TB1.first_name,TB1.last_name DESC;",id_stock);
+  sqlite3_prepare_v2(conn,buff,-1,&res,0);
+  int controlCode =sqlite3_step(res) ;
+  if(controlCode == SQLITE_DONE)
+  {
+    printf("No transaction is made on this stock!\n");
+  }
+  while(controlCode == SQLITE_ROW)
+  {
+    printf("%s %10d shares %-9s with %7.4f$ per share by %s %s\n",sqlite3_column_text(res,0),sqlite3_column_int(res,1),sqlite3_column_text(res,2),sqlite3_column_double(res,3),sqlite3_column_text(res,4),sqlite3_column_text(res,5));
+    controlCode = sqlite3_step(res) ;
   }
   return SUCCEED;
 }

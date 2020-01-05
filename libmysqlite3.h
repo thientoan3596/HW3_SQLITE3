@@ -44,6 +44,8 @@ void libmysqlite3_updateRecord_stocks(sqlite3 *conn,int id_stock,bool restricted
 void libmysqlite3_updateRecord_markets(sqlite3 *conn, int id_market,bool restricted,int restrictedTo);
 
 int libmysqlite3_print_clientAction(sqlite3 *conn,int id_client);
+int libmysqlite3_print_stock_buySell_Info(sqlite3 *conn,int id_stock);
+
 int libmysqlite3_findDBTables(sqlite3 *conn,char ***stringArr);
 
 
