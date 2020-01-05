@@ -4,7 +4,7 @@
 
 #include <stdbool.h>
 
-#define DATASTRINGBUFF 10
+#define DATESTRINGBUFF 10
 #define STRINGBUFF 1024
 #define FAILCONNECTION -1
 #define SQLSTMTERROR -2
@@ -43,7 +43,7 @@ void libmysqlite3_updateRecord_prices(sqlite3 *conn,int id_price,bool restricted
 void libmysqlite3_updateRecord_stocks(sqlite3 *conn,int id_stock,bool restricted,int restrictedTo);
 void libmysqlite3_updateRecord_markets(sqlite3 *conn, int id_market,bool restricted,int restrictedTo);
 
-
+int libmysqlite3_print_clientAction(sqlite3 *conn,int id_client);
 int libmysqlite3_findDBTables(sqlite3 *conn,char ***stringArr);
 
 

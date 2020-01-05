@@ -51,6 +51,7 @@ bool doesExist(sqlite3 *conn,char* tableName, char* columnName,char *value,int d
       return returnVal;
     }
     printf("$$ERROR does exist() Function parameter$$\n");
+    sqlite3_finalize(res);
     exit(INVALID_INPUT);
   }
   else if (dataType == 3)
@@ -65,6 +66,7 @@ bool doesExist(sqlite3 *conn,char* tableName, char* columnName,char *value,int d
       return returnVal;
     }
     printf("$$ERROR does exist() Function parameter$$\n");
+    sqlite3_finalize(res);
     exit(INVALID_INPUT);
   }
   else
@@ -79,13 +81,14 @@ bool doesExist(sqlite3 *conn,char* tableName, char* columnName,char *value,int d
       return returnVal;
     }
     printf("$$ERROR: does exist() Function parameter$$\n");
+    sqlite3_finalize(res);
     exit(INVALID_INPUT);
   }
 }
 
 static int mycallback(void *data, int argc, char **argv, char **azColName){
    int i;
-   fprintf(stderr, "%s: ", (const char*)data);
+   //fprintf(stderr, "?%s: ", (const char*)data);
    for(i=0; i<argc; i++){
       printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
    }
@@ -125,11 +128,7 @@ bool isLeap(int YYYY)
 
 int getDate(char **returnDate)
 {
-  char *date = (char*)calloc(DATASTRINGBUFF,sizeof(char));
-  *returnDate = date;
   int YYYY,MM,DD;
-
-
   printf("\tDate format is <YYYY-MM-DD> according to ISO-8601 standard!\n\t\tYear:");
   scanf("%d",&YYYY);
   if(YYYY < 1)
@@ -137,8 +136,6 @@ int getDate(char **returnDate)
     puts("\t\t$$INVALID YEAR$$!");
     return INVALID_INPUT;
   }
-
-
   printf("\t\tMonth:");
   scanf("%d",&MM);
   if( MM >12 || MM <1 )
@@ -146,8 +143,6 @@ int getDate(char **returnDate)
     puts("\t\t$$INVALID MONTH$$!");
     return INVALID_INPUT;
   }
-
-
   printf("\t\tDate:");
   scanf("%d",&DD);
   if( !(DD >31 || DD <1) )
@@ -158,6 +153,8 @@ int getDate(char **returnDate)
   		{
   			if( !(!isLeap(YYYY) && MM == 2 && DD >28))
   			{
+          char *date = (char*)calloc(DATESTRINGBUFF,sizeof(char));
+          *returnDate = date;
   				sprintf(*returnDate,"%04d-%02d-%02d",YYYY,MM,DD);
   				return SUCCEED;
   			}
@@ -352,7 +349,7 @@ int libmysqlite3_addingRecord_prices(sqlite3 *conn)
   sqlite3_bind_int(res,2,id_stock_buff);
   sqlite3_bind_double(res,3,buy_price_buff);
   sqlite3_bind_double(res,4,sell_price_buff);
-  sqlite3_bind_text(res,5,date,DATASTRINGBUFF,SQLITE_STATIC);
+  sqlite3_bind_text(res,5,date,DATESTRINGBUFF,SQLITE_STATIC);
 
   if(sqlite3_step(res) != SQLITE_DONE)
   {
@@ -589,17 +586,17 @@ void libmysqlite3_updateRecord(sqlite3 *conn)
     case 2:
       printf("\tEnter id_deal to update:\n\t>");
       scanf("%d",&buff);
-      //libmysqlite3_updateRecord_deals(conn,buff);
+      libmysqlite3_updateRecord_deals(conn,buff,false,0);
       break;
     case 3:
       printf("\tEnter id_price to update:\n\t>");
       scanf("%d",&buff);
-      //libmysqlite3_updateRecord_prices(conn,buff);
+      libmysqlite3_updateRecord_prices(conn,buff,false,0);
       break;
     case 4:
       printf("\tEnter id_stock to update:\n\t>");
       scanf("%d",&buff);
-      //libmysqlite3_updateRecord_stocks(conn,buff);
+      libmysqlite3_updateRecord_stocks(conn,buff,false,0);
       break;
     case 5:
       printf("\tEnter id_market to update:\n\t>");
@@ -780,6 +777,7 @@ void libmysqlite3_updateRecord_deals(sqlite3 *conn,int id_deal,bool restricted,i
 void libmysqlite3_updateRecord_prices(sqlite3 *conn,int id_price,bool restricted,int restrictedTo)
 {
   int option, new_val;
+  float new_price;
   char strbuff[STRINGBUFF];
   sqlite3_stmt *res;
   if(!restricted)
@@ -835,21 +833,36 @@ void libmysqlite3_updateRecord_prices(sqlite3 *conn,int id_price,bool restricted
       break;
     case 3:
       printf("\t\tNew buy_price:\n\t\t>");
-      scanf("%d",&new_val);
-      sqlite3_prepare_v2(conn,"UPDATE prices SET buy_price = ? WHERE id_price = ?;",-1,&res,0);
-      sqlite3_bind_int(res,1,new_val);
-      sqlite3_bind_int(res,2,id_price);
-      sqlite3_step(res);
-      sqlite3_finalize(res);
+      scanf("%f",&new_price);
+      if(new_price <= 0)
+      {
+        printf("\t\t$$UPDATE FAIL: NEGATIVE VALUE$$\n");
+      }
+      else
+      {
+        sqlite3_prepare_v2(conn,"UPDATE prices SET buy_price = ? WHERE id_price = ?;",-1,&res,0);
+        sqlite3_bind_int(res,1,new_price);
+        sqlite3_bind_int(res,2,id_price);
+        sqlite3_step(res);
+        sqlite3_finalize(res);
+      }
+
       break;
     case 4:
       printf("\t\tNew sell_price:\n\t\t>");
-      scanf("%d",&new_val);
-      sqlite3_prepare_v2(conn,"UPDATE prices SET sell_price = ? WHERE id_price = ?;",-1,&res,0);
-      sqlite3_bind_int(res,1,new_val);
-      sqlite3_bind_int(res,2,id_price);
-      sqlite3_step(res);
-      sqlite3_finalize(res);
+      scanf("%f",&new_price);
+      if(new_price <= 0)
+      {
+        printf("\t\t$$UPDATE FAIL: NEGATIVE VALUE$$\n");
+      }
+      else
+      {
+        sqlite3_prepare_v2(conn,"UPDATE prices SET sell_price = ? WHERE id_price = ?;",-1,&res,0);
+        sqlite3_bind_int(res,1,new_price);
+        sqlite3_bind_int(res,2,id_price);
+        sqlite3_step(res);
+        sqlite3_finalize(res);
+      }
       break;
     case 5:
       printf("\t\tNew date:\n");
@@ -1013,4 +1026,69 @@ void libmysqlite3_updateRecord_markets(sqlite3 *conn, int id_market,bool restric
       puts("\t\t$$Invalid Option$$");
       break;
   }
+}
+int libmysqlite3_print_clientAction(sqlite3 *conn,int id_client)
+{
+  /*
+  **  id_client: fName lName;
+  **
+  **
+  **
+  **
+  **
+  **
+  */
+  char buff[STRINGBUFF];
+
+
+  sqlite3_stmt *res;
+  sqlite3_prepare_v2(conn,"SELECT * FROM clients where id_client =?;",-1,&res,0);
+  sqlite3_bind_int(res,1,id_client);
+  if(sqlite3_step(res) != SQLITE_ROW)
+  {
+    printf("\t\t$$%s$$\n",sqlite3_errmsg(conn));
+    return INVALID_INPUT;
+  }
+  printf("ClientID|First Name|Last Name \n");
+  printf("%4d\t|%-10s|%-s\n",sqlite3_column_int(res,0),sqlite3_column_text(res,1),sqlite3_column_text(res,2));
+  sqlite3_finalize(res);
+  printf("==================================\n");
+  sprintf(buff,"%d",id_client);
+  if(!doesExist(conn,"deals","id_client",buff,1))
+  {
+    printf("No deal made by client!\n");
+    return SUCCEED;
+  }
+  sprintf(buff,        "WITH "
+                         "buff AS "
+                       "( "
+                           "SELECT * "
+                           "FROM prices "
+                           "LEFT JOIN stocks USING (id_stock) "
+                          ") "
+                       "SELECT 	buff.date, "
+                               "d.id_deal, "
+                               "buff.id_stock, "
+                               "buff.stock_name, "
+                               "buff.id_price, "
+                               "CASE d.is_buy "
+                                  "WHEN 1 THEN 'Buy' "
+                                  "ELSE 'Sell' "
+                               "END AS Status, "
+                               "CASE d.is_buy "
+                                  "WHEN 1 THEN buff.buy_price "
+                                  "ELSE buff.sell_price "
+                               "END AS price, "
+                               "d.quantity "
+                       "FROM deals d "
+                       "LEFT JOIN buff USING (id_price) "
+                       "WHERE d.id_client = %d "
+                       "ORDER BY buff.date,buff.id_stock,d.is_buy,d.id_deal ASC ;",id_client);
+  printf("  date \t  |id_deal|id_stock| stock name |id_price|Status|price  |Quantity\n");
+  sqlite3_prepare_v2(conn,buff,-1,&res,0);
+  while(sqlite3_step(res) == SQLITE_ROW)
+  {
+    printf("%s|%7d|%8d|%12s|%8d|%6s|%7.3f|%d\n",sqlite3_column_text(res,0),sqlite3_column_int(res,1),sqlite3_column_int(res,2),sqlite3_column_text(res,3),sqlite3_column_int(res,4),sqlite3_column_text(res,5),sqlite3_column_double(res,6),sqlite3_column_int(res,7));
+  }
+  return SUCCEED;
 }

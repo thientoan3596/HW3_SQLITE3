@@ -32,7 +32,7 @@ int main(void)
   // printf("\n%s",sqlite3_errmsg(connection));
   // sqlite3_step(res);
   // printf("\n%s",sqlite3_errmsg(connection));
-
+  libmysqlite3_print_clientAction(connection,15);
 
 
 
