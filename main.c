@@ -46,10 +46,11 @@ int main(void)
       exit(SQLSTMTERROR);
     }
 
+    
     int menu_Option = -1;
     while(menu_Option != 0 )
     {
-      printf("Option: \n0-Quit\n1-Adding Record\n2-Delete Record\n>");
+      printf("Option: \n0-Quit\n1-Adding Record\n2-Delete Record\n3-Update\n>");
       scanf("%d",&menu_Option);
       switch(menu_Option)
       {
@@ -57,6 +58,12 @@ int main(void)
           break;
         case 1:
           libmysqlite3_addingRecord(connection);
+          break;
+        case 2:
+          libmysqlite3_deleteRecord(connection);
+          break;
+        case 3:
+          libmysqlite3_updateRecord(connection);
           break;
         default:
           system("cls||clear");
