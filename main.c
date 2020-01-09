@@ -4,11 +4,7 @@
 #include <sqlite3.h>
 #include "libmysqlite3.h"
 #include <unistd.h>
-
-
 #define MYDATABASE "stockexchange_5A.db"
-
-
 int main(void)
 {
   sqlite3 *connection;
@@ -20,26 +16,8 @@ int main(void)
   }
   puts("Set up connection successfully");
   char *zErrMsg;
-  sqlite3_stmt *myStmt;
 
-  // sqlite3_stmt *res;
-  // sqlite3_prepare_v2(connection,"SELECT market_name FROM markets WHERE ? = 1;",-1,&res,0);
-  // sqlite3_bind_text(res,1,"id_market",-1,SQLITE_TRANSIENT);
-  // int rc = sqlite3_step(res) ;
-  // printf("\nrc %d\n",rc);
-  // printf("\n%d\n",sqlite3_column_count(res));
-  // printf("%s",sqlite3_column_text(res,0));
-  // printf("\n%s",sqlite3_errmsg(connection));
-  // sqlite3_step(res);
-  // printf("\n%s",sqlite3_errmsg(connection));
-  libmysqlite3_print_stock_buySell_Info(connection,6);
-
-
-
-
-
-  return 0;
-
+  sqlite3_exec(connection,"PRAGMA foreign_keys = ON;",0,NULL,NULL);
   returnCode = sqlite3_exec(connection, "CREATE TABLE IF NOT EXISTS prices ("
                                         "id_price INTEGER PRIMARY KEY,"
                                         "id_stock INTEGER,"
@@ -68,7 +46,10 @@ int main(void)
     int menu_Option = -1;
     while(menu_Option != 0 )
     {
-      printf("Option: \n0-Quit\n1-Adding Record\n2-Delete Record\n3-Update\n>");
+      printf("Option: \n0-Quit\n1-Adding Record\n2-Delete Record\n3-Update"
+             "\n4-Find client action.\n5-Find client action with for a specified stock."
+             "\n6-Find all client portfolio.\n7-Find client portfolio.\n8-Find all clients profit."
+             "\n9-Find single client profit.\n10-Find history of daily price change for a stock\n11-Clear terminal\n>");
       scanf("%d",&menu_Option);
       switch(menu_Option)
       {
@@ -83,17 +64,35 @@ int main(void)
         case 3:
           libmysqlite3_updateRecord(connection);
           break;
+        case 4:
+          libmysqlite3_find_clientAction(connection,0);
+          break;
+        case 5:
+          libmysqlite3_find_clientAction(connection,1);
+          break;
+        case 6:
+          libmysqlite3_print_allClientPortfolio(connection);
+          break;
+        case 7:
+          libmysqlite3_find_singleClientPortfolio(connection);
+          break;
+        case 8:
+          libmysqlite3_find_allClientProfit(connection);
+          break;
+        case 9:
+          libmysqlite3_find_singleClientProfit(connection);
+          break;
+        case 10:
+          libmysqlite3_find_dailyChange_stock(connection);
+          break;
+        case 11:
+          system("clear");
+          break;
         default:
-          system("cls||clear");
           printf("Invalid Option\n");
           break;
       }
-      //system("cls||clear");
     }
-
-
-
-
-  sqlite3_close(connection);printf("TestOke!%d\n",returnCode);
+  sqlite3_close(connection);
   return 0;
 }

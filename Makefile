@@ -1,18 +1,18 @@
+CC = gcc
+CCFLAGS = -lsqlite3 -Wall -Wextra -std=c99 -pedantic -g -I.
+DEPS = libmysqlite3.h
+OBJ = main.o libmysqlite3.o
+
+
 .PHONY: all
 all: myapp
 
-myapp: main.o libmysqlite3.o
-	gcc main.o libmysqlite3.o -lsqlite3 -o myapp
+myapp: $(OBJ)
+	$(CC) $^ $(CCFLAGS) -o $@
 
-libmysqlite3.o: libmysqlite3.c libmysqlite3.h
-	gcc -c libmysqlite3.c
+%.o: %.c $(DEPS)
+	$(CC) -c $(CCFLAGS) $<
 
-main.o: main.c libmysqlite3.h
-	gcc -c main.c
-
-.PHONY: rollback
-rollback:
-	cp ./backup_db/stockexchange_5A.db ./stockexchange_5A.db
 .PHONY: clean
 clean:
 	rm -rf *.o myapp
