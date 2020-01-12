@@ -544,6 +544,7 @@ void libmysqlite3_updateRecord(sqlite3 *conn)
 {
   int buff = -1 ;
   printf("\tWARNING: All the related information will be updated\n");
+  sqlite3_exec(conn,"PRAGMA foreign_keys = OFF;",0,NULL,NULL);
   printf("\tOption:\n\t1-clients\n\t2-deals\n\t3-prices\n\t4-stocks\n\t5-markets\n\t0-Cancel\n\t>");
   scanf("%d",&buff);
   switch (buff) {
@@ -578,6 +579,7 @@ void libmysqlite3_updateRecord(sqlite3 *conn)
       puts("$$Invalid Option$$");
       break;
   }
+sqlite3_exec(conn,"PRAGMA foreign_keys = ON;",0,NULL,NULL);
 }
 void libmysqlite3_updateRecord_clients(sqlite3 *conn,int id_client,int forcedUpdate,int forcedUpdateTo)
 {
